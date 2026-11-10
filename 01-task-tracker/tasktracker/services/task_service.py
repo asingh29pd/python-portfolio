@@ -1,7 +1,8 @@
 from datetime import date
 
 from tasktracker.domain.task import Priority, Task
-from tasktracker.repositories.task_repository import TaskRepository
+from tasktracker.repositories.base import TaskRepositoryProtocol
+# from tasktracker.repositories.task_repository import TaskRepository
 
 
 class TaskNotFoundError(Exception):
@@ -11,7 +12,7 @@ class TaskNotFoundError(Exception):
 class TaskService:
     """Business rules live here, not in the CLI or the database code."""
 
-    def __init__(self, repository: TaskRepository):
+    def __init__(self, repository: TaskRepositoryProtocol):
         self._repo = repository
 
     def add_task(self, title: str, priority: Priority, due_date: date | None) -> Task:

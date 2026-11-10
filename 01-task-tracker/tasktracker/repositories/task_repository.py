@@ -63,7 +63,9 @@ class TaskRepository:
 
     def list_all(self) -> list[Task]:
         with self._connection() as conn:
-            rows = conn.execute("SELECT * FROM tasks ORDER BY done ASC, id ASC").fetchall()
+            rows = conn.execute(
+                "SELECT * FROM tasks ORDER BY done ASC, id ASC"
+            ).fetchall()
         return [self._to_task(row) for row in rows]
 
     def mark_done(self, task_id: int) -> bool:

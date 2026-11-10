@@ -5,12 +5,13 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from tasktracker.config import DB_PATH
+from tasktracker.bootstrap import build_service
 from tasktracker.domain.task import Priority
-from tasktracker.repositories.task_repository import TaskRepository
-from tasktracker.services.task_service import TaskNotFoundError, TaskService
+from tasktracker.services.task_service import TaskNotFoundError
 
-app = typer.Typer(help="Task Tracker: manage your tasks from the terminal.", add_completion=False)
+app = typer.Typer(
+    help="Task Tracker: manage your tasks from the terminal.", add_completion=False
+)
 console = Console()
 
 PRIORITY_STYLE = {
@@ -18,10 +19,6 @@ PRIORITY_STYLE = {
     Priority.MEDIUM: "yellow",
     Priority.LOW: "green",
 }
-
-
-def get_service() -> TaskService:
-    return TaskService(TaskRepository(DB_PATH))
 
 
 def fail(message: str) -> None:
@@ -32,12 +29,16 @@ def fail(message: str) -> None:
 @app.command()
 def add(
     title: str = typer.Argument(..., help="Task title"),
-    priority: Priority = typer.Option(Priority.MEDIUM, "--priority", "-p", help="low, medium or high"),
-    due: Optional[datetime] = typer.Option(None, "--due", "-d", formats=["%Y-%m-%d"], help="Due date (YYYY-MM-DD)"),
+    priority: Priority = typer.Option(
+        Priority.MEDIUM, "--priority", "-p", help="low, medium or high"
+    ),
+    due: Optional[datetime] = typer.Option(
+        None, "--due", "-d", formats=["%Y-%m-%d"], help="Due date (YYYY-MM-DD)"
+    ),
 ):
     """Add a new task."""
     try:
-        task = get_service().add_task(title, priority, due.date() if due else None)
+        task = build_service().add_task(title, priority, due.date() if due else None)
     except ValueError as error:
         fail(str(error))
     console.print(f"[bold green]✓[/bold green] Added task #{task.id}: {task.title}")
@@ -48,9 +49,11 @@ def list_tasks(
     show_all: bool = typer.Option(False, "--all", "-a", help="Include completed tasks"),
 ):
     """Show your tasks in a table."""
-    tasks = get_service().list_tasks(include_done=show_all)
+    tasks = build_service().list_tasks(include_done=show_all)
     if not tasks:
-        console.print("[dim]No tasks yet. Add one with:[/dim] python main.py add \"My first task\"")
+        console.print(
+            '[dim]No tasks yet. Add one with:[/dim] python main.py add "My first task"'
+        )
         return
 
     table = Table(title="Your Tasks", header_style="bold cyan", border_style="dim")
@@ -82,7 +85,7 @@ def list_tasks(
 def done(task_id: int = typer.Argument(..., help="ID of the task")):
     """Mark a task as done."""
     try:
-        get_service().complete_task(task_id)
+        build_service().complete_task(task_id)
     except TaskNotFoundError as error:
         fail(str(error))
     console.print(f"[bold green]✓[/bold green] Task #{task_id} marked as done.")
@@ -92,7 +95,7 @@ def done(task_id: int = typer.Argument(..., help="ID of the task")):
 def delete(task_id: int = typer.Argument(..., help="ID of the task")):
     """Delete a task."""
     try:
-        get_service().delete_task(task_id)
+        build_service().delete_task(task_id)
     except TaskNotFoundError as error:
         fail(str(error))
     console.print(f"[bold green]✓[/bold green] Task #{task_id} deleted.")

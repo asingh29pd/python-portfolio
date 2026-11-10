@@ -2,9 +2,8 @@ import tkinter as tk
 from datetime import date, datetime
 from tkinter import messagebox, ttk
 
-from tasktracker.config import DB_PATH
+from tasktracker.bootstrap import build_service
 from tasktracker.domain.task import Priority
-from tasktracker.repositories.task_repository import TaskRepository
 from tasktracker.services.task_service import TaskNotFoundError, TaskService
 
 BG = "#f4f6fb"
@@ -52,7 +51,9 @@ class TaskApp(tk.Tk):
 
         ttk.Label(form, text="Title").grid(row=0, column=0, sticky="w")
         ttk.Label(form, text="Priority").grid(row=0, column=1, sticky="w", padx=(12, 0))
-        ttk.Label(form, text="Due (YYYY-MM-DD)").grid(row=0, column=2, sticky="w", padx=(12, 0))
+        ttk.Label(form, text="Due (YYYY-MM-DD)").grid(
+            row=0, column=2, sticky="w", padx=(12, 0)
+        )
 
         self.title_var = tk.StringVar()
         self.priority_var = tk.StringVar(value=Priority.MEDIUM.value)
@@ -71,16 +72,21 @@ class TaskApp(tk.Tk):
             width=10,
         ).grid(row=1, column=1, padx=(12, 0))
 
-        ttk.Entry(form, textvariable=self.due_var, width=16).grid(row=1, column=2, padx=(12, 0))
-
-        ttk.Button(form, text="Add Task", style="Accent.TButton", command=self.add_task).grid(
-            row=1, column=3, padx=(12, 0)
+        ttk.Entry(form, textvariable=self.due_var, width=16).grid(
+            row=1, column=2, padx=(12, 0)
         )
+
+        ttk.Button(
+            form, text="Add Task", style="Accent.TButton", command=self.add_task
+        ).grid(row=1, column=3, padx=(12, 0))
 
     def _build_table(self) -> None:
         self.show_done = tk.BooleanVar(value=False)
         ttk.Checkbutton(
-            self, text="Show completed tasks", variable=self.show_done, command=self.refresh
+            self,
+            text="Show completed tasks",
+            variable=self.show_done,
+            command=self.refresh,
         ).pack(anchor="w", padx=20)
 
         container = ttk.Frame(self)
@@ -116,8 +122,12 @@ class TaskApp(tk.Tk):
         bar = ttk.Frame(self)
         bar.pack(fill="x", padx=20, pady=(0, 14))
 
-        ttk.Button(bar, text="✓ Mark Done", command=self.complete_task).pack(side="left")
-        ttk.Button(bar, text="Delete", command=self.delete_task).pack(side="left", padx=8)
+        ttk.Button(bar, text="✓ Mark Done", command=self.complete_task).pack(
+            side="left"
+        )
+        ttk.Button(bar, text="Delete", command=self.delete_task).pack(
+            side="left", padx=8
+        )
 
         self.status_var = tk.StringVar()
         ttk.Label(bar, textvariable=self.status_var).pack(side="right")
@@ -128,7 +138,9 @@ class TaskApp(tk.Tk):
         tasks = self.service.list_tasks(include_done=self.show_done.get())
 
         for task in tasks:
-            overdue = bool(task.due_date and task.due_date < date.today() and not task.done)
+            overdue = bool(
+                task.due_date and task.due_date < date.today() and not task.done
+            )
             if task.done:
                 tag = "done"
             elif overdue:
@@ -145,7 +157,13 @@ class TaskApp(tk.Tk):
                 "",
                 "end",
                 iid=str(task.id),
-                values=(task.id, task.title, task.priority.value.title(), due_text, status),
+                values=(
+                    task.id,
+                    task.title,
+                    task.priority.value.title(),
+                    due_text,
+                    status,
+                ),
                 tags=(tag,),
             )
 
@@ -155,7 +173,9 @@ class TaskApp(tk.Tk):
     def _selected_id(self) -> int | None:
         selection = self.tree.selection()
         if not selection:
-            messagebox.showinfo("No task selected", "Please click a task in the list first.")
+            messagebox.showinfo(
+                "No task selected", "Please click a task in the list first."
+            )
             return None
         return int(selection[0])
 
@@ -166,11 +186,15 @@ class TaskApp(tk.Tk):
             try:
                 due = datetime.strptime(due_text, "%Y-%m-%d").date()
             except ValueError:
-                messagebox.showerror("Invalid date", "Use the format YYYY-MM-DD, e.g. 2026-11-30.")
+                messagebox.showerror(
+                    "Invalid date", "Use the format YYYY-MM-DD, e.g. 2026-11-30."
+                )
                 return
 
         try:
-            self.service.add_task(self.title_var.get(), Priority(self.priority_var.get()), due)
+            self.service.add_task(
+                self.title_var.get(), Priority(self.priority_var.get()), due
+            )
         except ValueError as error:
             messagebox.showerror("Cannot add task", str(error))
             return
@@ -210,5 +234,4 @@ def run() -> None:
     except Exception:
         pass
 
-    service = TaskService(TaskRepository(DB_PATH))
-    TaskApp(service).mainloop()
+    TaskApp(build_service()).mainloop()

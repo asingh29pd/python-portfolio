@@ -1,0 +1,12 @@
+{
+  "next_id": 2,
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Test JSON storage",
+      "priority": "high",
+      "due_date": "2026-11-30",
+      "done": false
+    }
+  ]
+}
