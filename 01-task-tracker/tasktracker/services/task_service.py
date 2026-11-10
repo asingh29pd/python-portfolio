@@ -2,8 +2,7 @@ from datetime import date
 
 from tasktracker.domain.task import Priority, Task
 from tasktracker.repositories.base import TaskRepositoryProtocol
-from tasktracker.bootstrap import build_service
-# from tasktracker.repositories.task_repository import TaskRepository
+
 
 class TaskNotFoundError(Exception):
     pass
@@ -34,5 +33,3 @@ class TaskService:
     def delete_task(self, task_id: int) -> None:
         if not self._repo.delete(task_id):
             raise TaskNotFoundError(f"Task #{task_id} not found.")
-
-       
